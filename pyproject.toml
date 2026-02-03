@@ -9,5 +9,6 @@ dependencies = [
     "langchain>=0.2.0",
     "langgraph>=0.0.48",
     "langsmith>=0.1.52",
-    "langchain-google-genai>=1.0.3",
+    "langchain-openai>=0.1.1",
+    "reportlab>=4.1.0",
 ]
