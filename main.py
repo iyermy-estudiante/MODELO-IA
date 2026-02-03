@@ -2,7 +2,7 @@ import os
 import smtplib
 from typing import TypedDict
 from dotenv import load_dotenv
-from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain_openai import ChatOpenAI # Changed
 from langgraph.graph import StateGraph, END
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
@@ -30,16 +30,16 @@ def create_pdf(title: str, content: str, filename: str) -> str:
         doc = SimpleDocTemplate(filename)
         styles = getSampleStyleSheet()
         story = []
-        
+
         # Título
         story.append(Paragraph(title, styles['h1']))
         story.append(Spacer(1, 0.2*inch))
-        
+
         # Contenido
         # Reemplazar saltos de línea para que se muestren correctamente en el PDF
         formatted_content = content.replace('\n', '<br/>')
         story.append(Paragraph(formatted_content, styles['BodyText']))
-        
+
         doc.build(story)
         print(f"PDF '{filename}' creado exitosamente.")
         return filename
@@ -81,7 +81,7 @@ def send_email_with_attachment(recipient: str, subject: str, body: str, attachme
     # Enviar el correo
     try:
         with smtplib.SMTP(smtp_server, smtp_port) as server:
-            server.starttls() # Cifrar la conexión
+            server.starttls()
             server.login(sender_email, password)
             server.sendmail(sender_email, recipient, message.as_string())
         print(f"Correo enviado exitosamente a {recipient}.")
@@ -89,7 +89,15 @@ def send_email_with_attachment(recipient: str, subject: str, body: str, attachme
         print(f"[ERROR] Ocurrió un error al enviar el correo: {e}")
 
 # --- NODOS DEL GRAFO ---
-llm = ChatGoogleGenerativeAI(model="gemini-pro", google_api_key=os.getenv("API_KEY_GOOGLE"))
+github_token = os.getenv("GITHUB_TOKEN") # Changed
+if not github_token:
+    raise ValueError("GITHUB_TOKEN no encontrado en el archivo .env")
+
+llm = ChatOpenAI(
+    model="openai/gpt-4o",
+    base_url="https://models.github.ai/inference",
+    api_key=github_token
+) # Changed
 
 def get_user_data(state: AppState) -> AppState:
     """Nodo para solicitar los datos iniciales al usuario."""
@@ -131,7 +139,7 @@ def process_outputs(state: AppState) -> AppState:
     answer = state["answer"]
     question = state["question"]
     email = state["email"]
-    
+
     # Crear PDF
     pdf_filename = "respuesta_ia.pdf"
     pdf_path = create_pdf(f"Respuesta a: {question[:40]}...", answer, pdf_filename)
@@ -141,11 +149,11 @@ def process_outputs(state: AppState) -> AppState:
         email_subject = f"Respuesta a tu pregunta: '{question[:30]}...'"
         email_body = "Hola,\n\nAdjunto encontrarás la respuesta generada por la IA a tu pregunta.\n\nSaludos."
         send_email_with_attachment(email, email_subject, email_body, pdf_path)
-        
+
         # Limpiar el archivo PDF después de enviarlo
         os.remove(pdf_path)
         print(f"Archivo temporal '{pdf_path}' eliminado.")
-    
+
     return {{}}
 
 # --- CONSTRUCCIÓN DEL GRAFO ---
