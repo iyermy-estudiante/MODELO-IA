@@ -134,7 +134,6 @@ def process_outputs(state: AppState) -> AppState:
     print("Procesando salidas finales...")
     if state.get("error"):
         print(f"\n[PROCESO INTERRUMPIDO] {state['error']}")
-        return {{}}
 
     answer = state["answer"]
     question = state["question"]
@@ -154,7 +153,7 @@ def process_outputs(state: AppState) -> AppState:
         os.remove(pdf_path)
         print(f"Archivo temporal '{pdf_path}' eliminado.")
 
-    return {{}}
+    return {}
 
 # --- CONSTRUCCIÓN DEL GRAFO ---
 workflow = StateGraph(AppState)
@@ -177,5 +176,5 @@ app = workflow.compile()
 
 # --- EJECUCIÓN PRINCIPAL ---
 if __name__ == "__main__":
-    app.invoke({{}})
+    app.invoke({})
     print("\n--- Proceso del grafo finalizado. ---")
